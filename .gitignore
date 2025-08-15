@@ -1,0 +1,11 @@
+# Carpetas
+__pycache__
+.vscode
+data
+resultados
+
+# Entornos
+glau-dl
+
+# Modelo
+model/mobilenet_flV3_finetuning.h5
