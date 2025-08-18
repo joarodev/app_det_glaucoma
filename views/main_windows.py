@@ -17,47 +17,65 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Detector glaucoma - App")
         self.gc = gradcam_visualizer
+        
+        # Estado de inicialización
+        self.model_loaded = gradcam_visualizer is not None
 
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
         # Panel imagenes
         self.tab_single = QWidget()
-        self.tabs.addTab(self.tab_single, "Detectar imagen")
+        self.tabs.addTab(self.tab_single, "🔍 Detectar imagen")
         self._init_single_tab()
 
         # Panel carpeta
         self.tab_folder = QWidget()
-        self.tabs.addTab(self.tab_folder, "Detectar carpeta de imagenes")
+        self.tabs.addTab(self.tab_folder, "📁 Detectar carpeta")
         self._init_folder_tab()
 
         # Panel detalle (overlay, heatmap, características)
         self.tab_detail = QWidget()
-        self.tabs.addTab(self.tab_detail, "Detalle de resultados")
+        self.tabs.addTab(self.tab_detail, "📊 Detalle de resultados")
         self._init_detail_tab()
 
         # Panel historial
         self.tab_hist = QWidget()
-        self.tabs.addTab(self.tab_hist, "Historial")
+        self.tabs.addTab(self.tab_hist, "📋 Historial")
         self._init_history_tab()
 
         self.current_detail = None
 
     def _init_single_tab(self):
         layout = QVBoxLayout()
+        # Título para la sección
+        single_title = QLabel("🔍 Detección de imagen individual")
+        single_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 16px;")
+        single_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(single_title)
+
         btn_load = QPushButton("Cargar imagen y detectar")
         btn_load.clicked.connect(self.on_load_image)
         layout.addWidget(btn_load)
+        # Título para la vista previa
+        preview_title = QLabel("🔍 Vista previa de la detección")
+        preview_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin: 16px 0px 8px 0px;")
+        preview_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(preview_title)
+
         self.single_preview = QLabel("La predicción se mostrará aquí...")
         self.single_preview.setFixedSize(400, 300)
         self.single_preview.setAlignment(Qt.AlignCenter)
+        self.single_preview.setStyleSheet("border: 2px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc; color: #64748b;")
         layout.addWidget(self.single_preview)
 
         # acciones rápidas
         row = QHBoxLayout()
         self.btn_single_open = QPushButton("Mostrar en carpeta")
+        self.btn_single_open.setObjectName("secondary")
         self.btn_single_open.clicked.connect(self.open_current_detail_folder)
         self.btn_single_delete = QPushButton("Borrar detección")
+        self.btn_single_delete.setObjectName("danger")
         self.btn_single_delete.clicked.connect(self.delete_current_detail_folder)
         row.addWidget(self.btn_single_open); row.addWidget(self.btn_single_delete)
         layout.addLayout(row)
@@ -65,6 +83,12 @@ class MainWindow(QMainWindow):
 
     def _init_folder_tab(self):
         layout = QVBoxLayout()
+        # Título para la sección
+        folder_title = QLabel("📁 Procesamiento de carpeta de imágenes")
+        folder_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 16px;")
+        folder_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(folder_title)
+
         btn_folder = QPushButton("Seleccionar carpeta y detectar todo")
         btn_folder.clicked.connect(self.on_select_folder)
         layout.addWidget(btn_folder)
@@ -79,8 +103,10 @@ class MainWindow(QMainWindow):
 
         row = QHBoxLayout()
         self.btn_folder_open = QPushButton("Mostrar en carpeta elemento seleccionado")
+        self.btn_folder_open.setObjectName("secondary")
         self.btn_folder_open.clicked.connect(self.open_selected_folder_from_list)
         self.btn_folder_delete = QPushButton("Eliminar elemento seleccionado")
+        self.btn_folder_delete.setObjectName("danger")
         self.btn_folder_delete.clicked.connect(self.delete_selected_from_list)
         row.addWidget(self.btn_folder_open); row.addWidget(self.btn_folder_delete)
         layout.addLayout(row)
@@ -88,22 +114,51 @@ class MainWindow(QMainWindow):
 
     def _init_detail_tab(self):
         layout = QVBoxLayout()
+        
+        # Título para la sección
+        detail_title = QLabel("📊 Detalle completo de resultados")
+        detail_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 16px;")
+        detail_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(detail_title)
+        
         splitter = QSplitter()
 
         left = QWidget(); left_layout = QVBoxLayout(); left.setLayout(left_layout)
         right = QWidget(); right_layout = QVBoxLayout(); right.setLayout(right_layout)
 
+        # Título para la sección de imágenes
+        overlay_title = QLabel("🔍 Imagen con Grad-CAM superpuesto")
+        overlay_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 8px;")
+        overlay_title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(overlay_title)
+
         self.detail_overlay = QLabel("Overlay")
         self.detail_overlay.setAlignment(Qt.AlignCenter)
         self.detail_overlay.setMinimumSize(400, 300)
+        self.detail_overlay.setStyleSheet("border: 2px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc;")
+        left_layout.addWidget(self.detail_overlay)
+
+        # Título para heatmap
+        heatmap_title = QLabel("🔥 Mapa de calor puro (Grad-CAM)")
+        heatmap_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin: 16px 0px 8px 0px;")
+        heatmap_title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(heatmap_title)
+
         self.detail_heatmap = QLabel("Heatmap")
         self.detail_heatmap.setAlignment(Qt.AlignCenter)
         self.detail_heatmap.setMinimumSize(400, 300)
-        left_layout.addWidget(self.detail_overlay)
+        self.detail_heatmap.setStyleSheet("border: 2px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc;")
         left_layout.addWidget(self.detail_heatmap)
+
+        # Título para características
+        features_title = QLabel("📊 Características detectadas")
+        features_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 8px;")
+        features_title.setAlignment(Qt.AlignCenter)
+        right_layout.addWidget(features_title)
 
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
+        self.detail_text.setPlaceholderText("Las características de la detección se mostrarán aquí...")
         right_layout.addWidget(self.detail_text)
 
         splitter.addWidget(left)
@@ -112,8 +167,10 @@ class MainWindow(QMainWindow):
 
         row = QHBoxLayout()
         self.btn_detail_open = QPushButton("Mostrar en carpeta")
+        self.btn_detail_open.setObjectName("secondary")
         self.btn_detail_open.clicked.connect(self.open_current_detail_folder)
         self.btn_detail_delete = QPushButton("Borrar detección")
+        self.btn_detail_delete.setObjectName("danger")
         self.btn_detail_delete.clicked.connect(self.delete_current_detail_folder)
         row.addWidget(self.btn_detail_open); row.addWidget(self.btn_detail_delete)
         layout.addLayout(row)
@@ -122,12 +179,41 @@ class MainWindow(QMainWindow):
 
     def _init_history_tab(self):
         layout = QVBoxLayout()
+        # Título para la sección
+        history_title = QLabel("📋 Historial de detecciones")
+        history_title.setStyleSheet("font-weight: 600; color: #0c4a6e; font-size: 12pt; margin-bottom: 16px;")
+        history_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(history_title)
+
+        # Controles de filtrado y ordenamiento
         controls = QHBoxLayout()
+        
+        # Etiqueta para ordenamiento
+        sort_label = QLabel("Ordenar por:")
+        sort_label.setStyleSheet("font-weight: 600; color: #475569;")
+        controls.addWidget(sort_label)
+        
         self.combo_sort = QComboBox()
-        self.combo_sort.addItems(["Filtrar: fecha descendente", "Sort: fecha ascendente", "Sort: urgencia descendente", "Sort: urgencia ascendente"]) 
+        self.combo_sort.addItems([
+            "📅 Fecha descendente", 
+            "📅 Fecha ascendente", 
+            "⚠️ Urgencia descendente", 
+            "⚠️ Urgencia ascendente"
+        ]) 
+        controls.addWidget(self.combo_sort)
+        
+        # Espaciador
+        controls.addStretch()
+        
+        # Etiqueta para filtro
+        filter_label = QLabel("Filtrar por urgencia:")
+        filter_label.setStyleSheet("font-weight: 600; color: #475569;")
+        controls.addWidget(filter_label)
+        
         self.combo_filter = QComboBox()
-        self.combo_filter.addItems(["Todo", "ALTA", "MEDIA", "BAJA"]) 
-        controls.addWidget(self.combo_sort); controls.addWidget(self.combo_filter)
+        self.combo_filter.addItems(["Todo", "🔴 ALTA", "🟡 MEDIA", "🟢 BAJA"]) 
+        controls.addWidget(self.combo_filter)
+        
         layout.addLayout(controls)
 
         self.history_list = QListWidget()
@@ -135,8 +221,10 @@ class MainWindow(QMainWindow):
         btn_refresh = QPushButton("Actualizar historial")
         btn_refresh.clicked.connect(self.refresh_history)
         btn_open = QPushButton("Mostrar en carpeta los seleccionados")
+        btn_open.setObjectName("secondary")
         btn_open.clicked.connect(self.open_selected_folder)
         btn_delete = QPushButton("Eliminar los seleccionados")
+        btn_delete.setObjectName("danger")
         btn_delete.clicked.connect(self.delete_selected_detection)
 
         layout.addWidget(btn_refresh)
@@ -207,12 +295,25 @@ class MainWindow(QMainWindow):
         min_urg = min((r.get("nivel_urgencia", 0.0) for r in results_sorted), default=0.0)
         detected = sum(1 for r in results_sorted if r.get("probabilidad", 0.0) >= 0.5)
         min_prob = min((r.get("probabilidad", 0.0) for r in results_sorted), default=0.0)
-        self.folder_summary.setText(
-            f"Processed: {total} | Detected>=0.5: {detected} | ALTA: {alta} | MEDIA: {media} | BAJA: {baja} | min urgency: {min_urg:.3f} | min prob: {min_prob:.3f}"
-        )
+        # Crear resumen visual con emojis y mejor formato
+        summary_text = f"""
+📊 RESUMEN DE DETECCIÓN:
+• Total procesadas: {total} imágenes
+• Glaucoma detectado (≥0.5): {detected} casos
+• Nivel de urgencia:
+  🔴 ALTA: {alta} | 🟡 MEDIA: {media} | 🟢 BAJA: {baja}
+• Urgencia mínima: {min_urg:.3f}
+• Probabilidad mínima: {min_prob:.3f}
+        """.strip()
+        self.folder_summary.setText(summary_text)
         for r in results_sorted:
             base = os.path.basename(r["image"]) if r.get("image") else "?"
-            label = f"{base} | urg={r['nivel_urgencia']:.3f} | {r['nivel_urgencia_label']}"
+            urgency_level = r['nivel_urgencia_label']
+            urgency_emoji = "🔴" if urgency_level == "ALTA" else "🟡" if urgency_level == "MEDIA" else "🟢"
+            prob = r.get('probabilidad', 0.0)
+            prob_emoji = "✅" if prob >= 0.5 else "❌"
+            
+            label = f"{urgency_emoji} {base} | Prob: {prob:.3f} {prob_emoji} | Urg: {r['nivel_urgencia']:.3f} | {urgency_level}"
             item = QListWidgetItem(label)
             item.setData(Qt.UserRole, r)
             self.folder_list.addItem(item)
@@ -225,22 +326,31 @@ class MainWindow(QMainWindow):
         try:
             df = read_master()
             # filtro por label si aplica
-            label_filter = self.combo_filter.currentText() if hasattr(self, "combo_filter") else "All"
-            if label_filter and label_filter != "All" and "nivel_urgencia_label" in df.columns:
-                df = df[df["nivel_urgencia_label"] == label_filter]
+            label_filter = self.combo_filter.currentText() if hasattr(self, "combo_filter") else "Todo"
+            if label_filter and label_filter != "Todo" and "nivel_urgencia_label" in df.columns:
+                # Extraer solo el texto sin emojis para el filtro
+                clean_filter = label_filter.replace("🔴 ", "").replace("🟡 ", "").replace("🟢 ", "")
+                df = df[df["nivel_urgencia_label"] == clean_filter]
             # ordenar según selección
-            sort_mode = self.combo_sort.currentText() if hasattr(self, "combo_sort") else "Sort: urgency desc"
-            if sort_mode == "Sort: date asc" and "timestamp" in df.columns:
+            sort_mode = self.combo_sort.currentText() if hasattr(self, "combo_sort") else "📅 Fecha descendente"
+            if sort_mode == "📅 Fecha ascendente" and "timestamp" in df.columns:
                 df_sorted = df.sort_values(by="timestamp", ascending=True)
-            elif sort_mode == "Sort: date desc" and "timestamp" in df.columns:
+            elif sort_mode == "📅 Fecha descendente" and "timestamp" in df.columns:
                 df_sorted = df.sort_values(by="timestamp", ascending=False)
-            elif sort_mode == "Sort: urgency asc":
+            elif sort_mode == "⚠️ Urgencia ascendente":
                 df_sorted = df.sort_values(by="nivel_urgencia", ascending=True)
             else:
                 df_sorted = df.sort_values(by="nivel_urgencia", ascending=False)
+            
             for _, row in df_sorted.iterrows():
                 base = os.path.basename(row['image']) if 'image' in row else '?'  # corregir bug: no existe nombre_imagen en master
-                label = f"{str(row['timestamp'])[:19]} | {base} | urg={row['nivel_urgencia']:.3f} | {row['nivel_urgencia_label']}"
+                urgency_level = row.get('nivel_urgencia_label', 'N/A')
+                urgency_emoji = "🔴" if urgency_level == "ALTA" else "🟡" if urgency_level == "MEDIA" else "🟢" if urgency_level == "BAJA" else "⚪"
+                prob = row.get('probabilidad', 0.0)
+                prob_emoji = "✅" if prob >= 0.5 else "❌"
+                timestamp = str(row.get('timestamp', ''))[:19] if row.get('timestamp') else 'N/A'
+                
+                label = f"📅 {timestamp} | {urgency_emoji} {base} | Prob: {prob:.3f} {prob_emoji} | Urg: {row.get('nivel_urgencia', 0.0):.3f} | {urgency_level}"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, row.to_dict())
                 self.history_list.addItem(item)
@@ -265,10 +375,33 @@ class MainWindow(QMainWindow):
             pass
         # texto características
         try:
-            pretty = json.dumps({
-                k: (float(v) if isinstance(v, (int, float)) else v) for k, v in res.items()
-            }, indent=2, ensure_ascii=False)
-            self.detail_text.setPlainText(pretty)
+            # Crear un formato más legible para el usuario médico
+            features_text = f"""📊 RESULTADO DE DETECCIÓN
+
+🔍 IMAGEN:
+   Archivo: {os.path.basename(res.get('image', 'N/A'))}
+
+📈 PROBABILIDADES:
+   • Probabilidad de glaucoma: {res.get('probabilidad', 0.0):.1%}
+   • Nivel de urgencia: {res.get('nivel_urgencia_label', 'N/A')} ({res.get('nivel_urgencia', 0.0):.3f})
+
+📍 LOCALIZACIÓN:
+   • Centro de la zona activa: ({res.get('centro', (0, 0))[0]:.1f}, {res.get('centro', (0, 0))[1]:.1f})
+   • Bounding box: {res.get('bbox', (0, 0, 0, 0))}
+
+📏 CARACTERÍSTICAS:
+   • Tamaño de zona activa: {res.get('tamano_zona_activa', 0.0):.1%}
+   • Archivos generados:
+     - Overlay: {os.path.basename(res.get('overlay_path', 'N/A'))}
+     - Heatmap: {os.path.basename(res.get('heatmap_puro_path', 'N/A'))}
+     - Datos CSV: {os.path.basename(res.get('csv_path', 'N/A'))}
+
+📋 DATOS TÉCNICOS COMPLETOS:
+{json.dumps({
+    k: (float(v) if isinstance(v, (int, float)) else v) for k, v in res.items()
+}, indent=2, ensure_ascii=False)}
+            """.strip()
+            self.detail_text.setPlainText(features_text)
         except Exception:
             self.detail_text.setPlainText(str(res))
 
@@ -372,3 +505,14 @@ class MainWindow(QMainWindow):
         if confirm_delete(self, folder):
             if delete_detection_folder(folder):
                 self.folder_list.takeItem(self.folder_list.currentRow())
+    
+    def set_model(self, gradcam_visualizer):
+        """Actualiza el modelo después de la carga inicial"""
+        self.gc = gradcam_visualizer
+        self.model_loaded = True
+        print("✅ Modelo configurado en la ventana principal")
+    
+    def show_error_message(self, message):
+        """Muestra un mensaje de error en la interfaz"""
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.critical(self, "Error", message)

@@ -3,6 +3,16 @@ __pycache__
 .vscode
 data
 resultados
+build
+upx
+dist
+
+# Archivos
+install_dependencies.py
+install_simple.py
+pyinstaller_config.py
+Ejecutar_App.bat
+Deteccion_Glaucoma.spec
 
 # Entornos
 glau-dl
